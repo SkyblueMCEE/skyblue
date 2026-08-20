@@ -37,6 +37,9 @@
   var PENDING_DOWNLOAD_STORE = "pending-downloads";
   var PENDING_DOWNLOAD_KEY = "latest";
   var PENDING_DOWNLOAD_MAX_AGE = 2 * 60 * 60 * 1000;
+  var DOWNLOAD_WORKER_URL = "download-worker.js";
+  var DOWNLOAD_ROUTE = "download-file.mcworld";
+  var downloadWorkerReady = registerDownloadWorker();
 
   var COUNTER_API = "https://page-views-api.ratneshc.com/api/v1";
   var COUNTER_SITE = window.location.hostname.toLowerCase();
@@ -105,6 +108,37 @@
   function initializeCounters() {
     incrementCounter(VIEW_COUNTER_PATH, el.viewCount);
     readCounter(DOWNLOAD_COUNTER_PATH, el.downloadCount);
+  }
+
+  function registerDownloadWorker() {
+    if (!("serviceWorker" in navigator) || !window.isSecureContext) {
+      return Promise.resolve(null);
+    }
+
+    return navigator.serviceWorker.register(DOWNLOAD_WORKER_URL, {
+      scope: "./",
+      updateViaCache: "none"
+    }).then(function (registration) {
+      return navigator.serviceWorker.ready.then(function () {
+        if (navigator.serviceWorker.controller) return registration;
+
+        return new Promise(function (resolve) {
+          var timer;
+          var finish = function () {
+            navigator.serviceWorker.removeEventListener("controllerchange", finish);
+            clearTimeout(timer);
+            resolve(navigator.serviceWorker.controller ? registration : null);
+          };
+
+          navigator.serviceWorker.addEventListener("controllerchange", finish);
+          timer = setTimeout(finish, 8000);
+          if (navigator.serviceWorker.controller) finish();
+        });
+      });
+    }).catch(function (error) {
+      console.warn("[skyblue] Reliable downloads are unavailable; using the browser fallback.", error);
+      return null;
+    });
   }
 
   function openPendingDownloadDatabase() {
@@ -182,21 +216,40 @@
     });
   }
 
-  function saveBlobToDevice(blob, fileName) {
-    var objectUrl = URL.createObjectURL(blob);
+  function makeDownloadFrame() {
+    var frame = document.createElement("iframe");
+    frame.name = "skyblue-download-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+    frame.hidden = true;
+    frame.setAttribute("aria-hidden", "true");
+    document.body.appendChild(frame);
+    setTimeout(function () { frame.remove(); }, PENDING_DOWNLOAD_MAX_AGE);
+    return frame.name;
+  }
+
+  function clickDownloadLink(href, fileName) {
+    var frameName = makeDownloadFrame();
     var anchor = document.createElement("a");
-    anchor.href = objectUrl;
+    anchor.href = href;
     anchor.download = fileName;
+    anchor.target = frameName;
     document.body.appendChild(anchor);
     anchor.click();
     setTimeout(function () { anchor.remove(); }, 1000);
+  }
 
-    // Firefox-based browsers may not consume a blob URL until after their
-    // download prompt closes. Revoking it after a few seconds can turn that
-    // pending download into a "File not found" page. Keep it alive for the
-    // same window as the pending download; the browser also releases it when
-    // this document is unloaded.
+  function saveBlobToDevice(blob, fileName, preferStoredDownload) {
+    if (preferStoredDownload && navigator.serviceWorker && navigator.serviceWorker.controller) {
+      clickDownloadLink(DOWNLOAD_ROUTE + "?v=" + Date.now(), fileName);
+      return true;
+    }
+
+    var objectUrl = URL.createObjectURL(blob);
+    clickDownloadLink(objectUrl, fileName);
+
+    // The hidden frame keeps the editor page (and therefore this URL) alive if
+    // a browser treats the fallback as navigation instead of as a download.
     setTimeout(function () { URL.revokeObjectURL(objectUrl); }, PENDING_DOWNLOAD_MAX_AGE);
+    return false;
   }
 
   function isDownloadReturn() {
@@ -218,7 +271,8 @@
     el.panelSec.hidden = true;
     el.downloadReadySec.hidden = false;
 
-    readPendingDownload().then(function (pending) {
+    Promise.all([readPendingDownload(), downloadWorkerReady]).then(function (results) {
+      var pending = results[0];
       if (!pending || !(pending.blob instanceof Blob) || !pending.fileName) {
         showMissingPendingDownload("Return to the editor and create the file again on this device.");
         return;
@@ -232,21 +286,24 @@
 
       el.downloadReady.disabled = false;
       el.downloadReady.textContent = "Download " + pending.fileName;
-      el.downloadReadyStatus.textContent = "Ready on this device. The temporary copy is removed after downloading.";
+      el.downloadReadyStatus.textContent = "Ready on this device. You can retry the download for up to two hours.";
 
+      var downloadCounted = false;
       el.downloadReady.addEventListener("click", function () {
         el.downloadReady.disabled = true;
         el.downloadReady.textContent = "Starting download…";
-        saveBlobToDevice(pending.blob, pending.fileName);
-        incrementCounter(DOWNLOAD_COUNTER_PATH, el.downloadCount);
-        clearPendingDownload().catch(function (error) {
-          console.error("[skyblue] Could not remove the temporary download.", error);
-        });
-        pending = null;
+        var usedReliableDownload = saveBlobToDevice(pending.blob, pending.fileName, true);
+        if (!downloadCounted) {
+          downloadCounted = true;
+          incrementCounter(DOWNLOAD_COUNTER_PATH, el.downloadCount);
+        }
         window.history.replaceState(null, "", window.location.pathname);
-        el.downloadReady.textContent = "Downloaded";
-        el.downloadReadyStatus.textContent = "Saved successfully. Import the new copy in Minecraft the way you normally import a world.";
-      }, { once: true });
+        el.downloadReady.textContent = "Download again";
+        el.downloadReady.disabled = false;
+        el.downloadReadyStatus.textContent = usedReliableDownload
+          ? "The file was sent to your browser. If it did not start, choose Download again."
+          : "The browser fallback was used. If nothing downloaded, refresh this page and try again.";
+      });
     }).catch(function (error) {
       console.error("[skyblue] Could not read the temporary download.", error);
       showMissingPendingDownload("Browser storage is unavailable. Return to the editor and create the file again.");
