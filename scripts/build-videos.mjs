@@ -14,7 +14,8 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT       = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CHANNEL_ID = 'UCWKqaC0pPlyLXo5qYwXrGjA';
-const TOP_N      = 9;
+const TOP_N      = 9;   // long-form cards
+const TOP_SHORTS = 10;  // shorts cards
 const PAGE       = join(ROOT, 'videos', 'index.html');
 const THUMB_DIR  = join(ROOT, 'assets', 'thumbs');
 const KEY        = process.env.YT_API_KEY;
@@ -39,6 +40,18 @@ const chunk = (arr, n) =>
 
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/* PT1M32S -> 92 */
+function isoToSeconds(iso) {
+  const m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso);
+  if (!m) return 0;
+  return (+m[1] || 0) * 86400 + (+m[2] || 0) * 3600 + (+m[3] || 0) * 60 + (+m[4] || 0);
+}
+
+/* strip the hashtag tail Shorts titles usually carry */
+function cleanTitle(t) {
+  return String(t).replace(/(\s*#[^\s#]+)+\s*$/, '').replace(/\s*\.\.\.\s*$/, '').trim() || t;
+}
 
 function formatViews(n) {
   n = Number(n) || 0;
@@ -67,25 +80,52 @@ console.log(`found ${ids.length} uploads`);
 /* ---------- 2. titles + view counts ---------- */
 const videos = [];
 for (const group of chunk(ids, 50)) {
-  const r = await api('videos', { part: 'snippet,statistics,status', id: group.join(',') });
+  const r = await api('videos', { part: 'snippet,statistics,status,contentDetails', id: group.join(',') });
   r.items.forEach((v) => {
     if (v.status?.privacyStatus !== 'public') return;
     videos.push({
       id: v.id,
       title: v.snippet.title,
-      views: Number(v.statistics?.viewCount || 0)
+      views: Number(v.statistics?.viewCount || 0),
+      seconds: isoToSeconds(v.contentDetails?.duration || '')
     });
   });
 }
 
-const top = videos.sort((a, b) => b.views - a.views).slice(0, TOP_N);
-console.log('\ntop by views:');
+/* ---------- 2b. split shorts from long-form ----------
+   The API exposes no "is this a Short" flag. Duration alone is unreliable
+   (plenty of normal tutorials run under 3 minutes), so we use duration only
+   to narrow the candidates, then confirm each one by asking YouTube whether
+   /shorts/<id> resolves. A Short returns 200; anything else redirects. */
+const candidates = videos.filter((v) => v.seconds > 0 && v.seconds <= 185);
+console.log(`\nchecking ${candidates.length} short-duration candidates...`);
+
+const shortIds = new Set();
+for (const group of chunk(candidates, 8)) {
+  await Promise.all(group.map(async (v) => {
+    try {
+      const r = await fetch('https://www.youtube.com/shorts/' + v.id, { redirect: 'manual' });
+      if (r.status === 200) shortIds.add(v.id);
+    } catch { /* network hiccup: treat as long-form */ }
+  }));
+}
+console.log(`  ${shortIds.size} confirmed shorts`);
+
+const longForm = videos.filter((v) => !shortIds.has(v.id));
+const shorts   = videos.filter((v) =>  shortIds.has(v.id));
+
+const top       = longForm.sort((a, b) => b.views - a.views).slice(0, TOP_N);
+const topShorts = shorts.sort((a, b) => b.views - a.views).slice(0, TOP_SHORTS);
+console.log('\ntop videos by views:');
 top.forEach((v, i) =>
+  console.log(`  ${String(i + 1).padStart(2)}. ${v.views.toLocaleString().padStart(9)}  ${v.title}`));
+console.log('\ntop shorts by views:');
+topShorts.forEach((v, i) =>
   console.log(`  ${String(i + 1).padStart(2)}. ${v.views.toLocaleString().padStart(9)}  ${v.title}`));
 
 /* ---------- 3. refresh local thumbnail fallbacks ---------- */
 await mkdir(THUMB_DIR, { recursive: true });
-for (const v of top) {
+for (const v of [...top, ...topShorts]) {
   for (const q of ['maxresdefault', 'hqdefault']) {
     const res = await fetch(`https://img.youtube.com/vi/${v.id}/${q}.jpg`);
     if (res.ok) {
@@ -99,31 +139,42 @@ for (const v of top) {
   }
 }
 
-/* ---------- 4. rewrite the card list ---------- */
-const cards = top.map((v) => `          <li class="sky-vid">
-            <a href="https://www.youtube.com/watch?v=${v.id}" rel="noopener">
-              <img src="https://img.youtube.com/vi/${v.id}/maxresdefault.jpg"
+/* ---------- 4. rewrite both card lists ---------- */
+const card = (v, isShort) => `          <li class="sky-vid">
+            <a href="https://www.youtube.com/${isShort ? 'shorts/' : 'watch?v='}${v.id}" rel="noopener">
+              <img src="https://img.youtube.com/vi/${v.id}/${isShort ? 'oar2' : 'maxresdefault'}.jpg"
                    data-fallback-1="https://img.youtube.com/vi/${v.id}/hqdefault.jpg"
                    data-fallback-2="../assets/thumbs/${v.id}.jpg"
-                   alt="" width="480" height="270" loading="lazy">
+                   alt="" width="${isShort ? 270 : 480}" height="${isShort ? 480 : 270}" loading="lazy">
               <span class="sky-vid-body">
-                <p class="sky-vid-title">${esc(v.title)}</p>
+                <p class="sky-vid-title">${esc(cleanTitle(v.title))}</p>
                 <p class="sky-vid-meta">${formatViews(v.views)}</p>
               </span>
             </a>
-          </li>`).join('\n');
+          </li>`;
+
+const cards       = top.map((v) => card(v, false)).join('\n');
+const shortsCards = topShorts.map((v) => card(v, true)).join('\n');
 
 let html = await readFile(PAGE, 'utf8');
-const START = '<!-- VIDEOS:START -->';
-const END   = '<!-- VIDEOS:END -->';
-if (!html.includes(START) || !html.includes(END)) {
-  throw new Error(`markers ${START} / ${END} not found in videos/index.html`);
-}
-const before = html.slice(0, html.indexOf(START) + START.length);
-const after  = html.slice(html.indexOf(END));
-const next   = `${before}\n${cards}\n          ${after}`;
+const original = html;
 
-if (next === html) {
+function replaceBlock(src, name, body) {
+  const START = `<!-- ${name}:START -->`;
+  const END   = `<!-- ${name}:END -->`;
+  if (!src.includes(START) || !src.includes(END)) {
+    throw new Error(`markers ${START} / ${END} not found in videos/index.html`);
+  }
+  return src.slice(0, src.indexOf(START) + START.length)
+       + `\n${body}\n          `
+       + src.slice(src.indexOf(END));
+}
+
+html = replaceBlock(html, 'VIDEOS', cards);
+html = replaceBlock(html, 'SHORTS', shortsCards);
+const next = html;
+
+if (next === original) {
   console.log('\nno change');
 } else {
   await writeFile(PAGE, next);

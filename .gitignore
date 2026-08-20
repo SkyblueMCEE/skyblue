@@ -16,3 +16,4 @@ npm-debug.log*
 *.mcworld
 *.mctemplate
 test-worlds/
+LICENSE

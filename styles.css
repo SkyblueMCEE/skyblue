@@ -125,16 +125,30 @@ a:hover{color:var(--sky-brand-press)}
 .sky-privacy .sky-warn-icon{position:relative;flex:none;width:1rem;height:1rem;background:var(--sky-brand-text);clip-path:polygon(50% 0%,100% 100%,0% 100%)}
 .sky-privacy .sky-warn-icon::before{content:"";position:absolute;left:50%;top:38%;width:2px;height:32%;background:var(--sky-white);transform:translateX(-50%)}
 .sky-privacy .sky-warn-icon::after{content:"";position:absolute;left:50%;bottom:14%;width:2px;height:2px;background:var(--sky-white);transform:translateX(-50%)}
+.sky-tool-stats{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.sky-tool-stat{
+  display:inline-flex;align-items:baseline;gap:.35rem;padding:.375rem .625rem;
+  border:1px solid rgba(255,255,255,.42);border-radius:var(--radius);
+  color:var(--sky-ink);background:rgba(255,255,255,.16);font-size:.8125rem
+}
+.sky-tool-stat strong{font-family:var(--font-mono);font-size:.875rem;color:var(--sky-white)}
 
 /* drop zone — single flat-bottomed cloud path, no per-shape borders/shadows */
 .sky-zone{position:relative;display:block;width:100%;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .sky-zone-frame{display:block;position:relative;width:100%;max-width:100%;margin-inline:auto;margin-top:1.5rem}
 .sky-zone-svg{display:block;width:100%;height:auto;filter:drop-shadow(0 3px 2px rgba(0,0,0,.55));transition:filter var(--dur-base) var(--ease),transform var(--dur-base) var(--ease)}
 .sky-zone-path{fill:var(--sky-white);stroke:var(--sky-white);stroke-width:5px;vector-effect:non-scaling-stroke;transition:fill var(--dur-base) var(--ease),stroke-opacity var(--dur-base) var(--ease)}
-.sky-zone-inner{position:absolute;left:14%;right:14%;top:48%;bottom:6%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.25rem;text-align:center;z-index:1}
-.sky-zone-title{font-family:var(--font-body);font-weight:600;font-size:1rem;color:var(--sky-ink);letter-spacing:-.01em;line-height:1.3}
+.sky-zone-inner{position:absolute;left:14%;right:14%;top:65%;transform:translateY(-50%);
+  transition:transform var(--dur-base) var(--ease);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.25rem;text-align:center;z-index:1;pointer-events:none}
+.sky-zone-title{font-family:var(--font-display);font-weight:400;font-size:1rem;color:var(--sky-ink);letter-spacing:.01em;line-height:1.2}
 .sky-zone-sub{font-size:.8125rem;line-height:1.4;color:var(--sky-ink)}
 .sky-zone:hover .sky-zone-svg,.sky-zone:focus-visible .sky-zone-svg{filter:drop-shadow(0 16px 4px rgba(0,0,0,.65));transform:translateY(-10px)}
+/* label rides along with the cloud — calc keeps the -50% centring */
+.sky-zone:hover .sky-zone-inner,
+.sky-zone:focus-visible .sky-zone-inner,
+.is-drag .sky-zone-inner{transform:translateY(calc(-50% - 10px))}
 .sky-zone:focus-visible{outline:2px solid var(--sky-white);outline-offset:6px}
 .is-drag .sky-zone-svg{filter:drop-shadow(0 16px 4px rgba(0,0,0,.65));transform:translateY(-10px)}
 .is-error .sky-zone-path{stroke-dasharray:7 6}
@@ -187,8 +201,76 @@ a:hover{color:var(--sky-brand-press)}
 .sky-switch input:checked + .sky-track{background:var(--sky-brand-text)}
 .sky-switch input:checked + .sky-track::after{transform:translateX(20px)}
 .sky-switch input:focus-visible + .sky-track{outline:2px solid var(--sky-brand-text);outline-offset:2px}
+.sky-switch input:disabled{cursor:not-allowed}
+.sky-switch input:disabled + .sky-track{background:#dce9ee;opacity:.72}
 .sky-panel-foot{display:flex;flex-direction:column;gap:.75rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--sky-fill)}
+.sky-bulk{display:flex;flex-wrap:wrap;gap:.5rem}
+.sky-bulk .sky-btn{flex:1 1 auto}
 .sky-count{font-size:.875rem;color:rgba(6,36,48,.72)}
+
+/* world settings editor */
+.sky-settings-layout{display:grid;gap:1.25rem;margin-top:1rem}
+.sky-settings-nav{
+  display:flex;gap:.5rem;overflow-x:auto;
+  margin-inline:-.25rem;padding:.625rem .25rem;background:var(--sky-white);
+  border-bottom:1px solid var(--sky-fill);scrollbar-width:thin
+}
+.sky-settings-nav-link{
+  display:flex;align-items:center;justify-content:space-between;gap:.625rem;flex:none;
+  padding:.5rem .75rem;border:0;border-radius:var(--radius);background:var(--sky-fill-soft);
+  color:var(--sky-ink);font:inherit;font-size:.8125rem;font-weight:600;text-align:left;white-space:nowrap;cursor:pointer
+}
+.sky-settings-nav-link:hover{background:var(--sky-fill);color:var(--sky-brand-text)}
+.sky-settings-nav-link[aria-selected="true"]{background:var(--sky-brand-text);color:var(--sky-white)}
+.sky-settings-nav-link[aria-selected="true"]:hover{background:var(--sky-brand-press);color:var(--sky-white)}
+.sky-settings-nav-link:focus-visible{outline:2px solid var(--sky-brand-text);outline-offset:2px}
+.sky-tab-count{
+  display:inline-flex;align-items:center;justify-content:center;min-width:1.375rem;height:1.375rem;
+  padding-inline:.3rem;border-radius:var(--radius);background:rgba(6,36,48,.08);font-family:var(--font-mono);font-size:.6875rem
+}
+.sky-settings-nav-link[aria-selected="true"] .sky-tab-count{background:rgba(255,255,255,.22)}
+.sky-settings-groups{min-width:0}
+.sky-settings-group{min-height:24rem;padding-block:.25rem}
+.sky-settings-group:focus{outline:none}
+.sky-settings-group:focus-visible{outline:2px solid var(--sky-fill);outline-offset:4px}
+.sky-settings-group-head{display:flex;flex-direction:column;gap:.25rem}
+.sky-settings-group-title{font-size:1.25rem;line-height:1.3}
+.sky-settings-group-description{max-width:var(--measure);color:rgba(6,36,48,.72);font-size:.875rem}
+.sky-setting-list{display:flex;flex-direction:column;gap:.375rem;margin-top:1rem}
+.sky-setting-row{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.75rem;
+  padding:.75rem;border-radius:var(--radius);transition:background var(--dur-base) var(--ease)
+}
+.sky-setting-row.is-changed{background:var(--sky-fill-soft)}
+.sky-setting-row.is-locked:not(.is-changed){background:rgba(235,247,252,.48)}
+.sky-setting-info{display:flex;flex-direction:column;align-items:flex-start;gap:.125rem;min-width:0}
+.sky-setting-label{font-size:1rem;font-weight:500;line-height:1.35}
+.sky-setting-description{max-width:42rem;color:rgba(6,36,48,.72);font-size:.8125rem;line-height:1.45}
+.sky-setting-key{font-family:var(--font-mono);font-size:.6875rem;color:rgba(6,36,48,.52);word-break:break-all}
+.sky-setting-info .sky-chip{order:initial;align-self:flex-start;margin-top:.25rem}
+.sky-lock-note{margin-top:.25rem;color:rgba(6,36,48,.65);font-size:.75rem;font-weight:600}
+.sky-setting-control{display:flex;align-items:center;justify-content:flex-end;min-width:0}
+.sky-setting-control.is-field{grid-column:1/-1;width:100%}
+.sky-field{
+  width:100%;min-height:2.75rem;padding:.625rem .75rem;border:1px solid rgba(6,36,48,.24);
+  border-radius:var(--radius);background:var(--sky-white);color:var(--sky-ink);font:inherit
+}
+.sky-field:hover{border-color:var(--sky-brand-text)}
+.sky-field:focus{border-color:var(--sky-brand-text);outline:2px solid var(--sky-fill);outline-offset:1px}
+.sky-field:disabled{cursor:not-allowed;background:#edf3f5;color:rgba(6,36,48,.58)}
+.sky-number-wrap{display:flex;align-items:center;width:100%}
+.sky-field-suffix{margin-left:-2.25rem;width:1.75rem;color:rgba(6,36,48,.62);pointer-events:none}
+.sky-section-tools{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.sky-inline-empty,.sky-section-note{
+  margin-top:1rem;padding:.75rem;border-radius:var(--radius);background:var(--sky-fill-soft);
+  color:rgba(6,36,48,.76);font-size:.875rem
+}
+.sky-experiment-group{margin-top:1.5rem}
+.sky-experiment-group+.sky-experiment-group{padding-top:1.5rem;border-top:1px solid var(--sky-fill)}
+.sky-subsection-title{font-size:1rem;line-height:1.35}
+.sky-subsection-description{margin-top:.2rem;color:rgba(6,36,48,.68);font-size:.8125rem;line-height:1.45}
+.sky-pack-list{display:flex;flex-direction:column;gap:.125rem;margin-top:.375rem}
+.sky-pack-list li{font-family:var(--font-mono);font-size:.6875rem;color:rgba(6,36,48,.68);overflow-wrap:anywhere}
 
 /* download */
 .sky-dl{display:flex;flex-direction:column;gap:.875rem}
@@ -197,7 +279,8 @@ a:hover{color:var(--sky-brand-press)}
 /* warnings */
 .sky-h2{font-size:1.5rem;color:var(--sky-ink)}
 .sky-warn{display:flex;flex-direction:column;gap:1.125rem;margin-top:1.25rem;list-style:none;padding:0}
-.sky-warn li{display:flex;flex-direction:column;gap:.25rem;max-width:var(--measure);margin-inline:0}
+.sky-warn li{display:block;max-width:var(--measure);margin-inline:0}
+.sky-warn li b{display:block;margin-bottom:.25rem}
 .sky-warn b{font-weight:600;font-size:1.0625rem;letter-spacing:-.01em}
 .sky-rule{height:2px;width:2.5rem;background:var(--sky-white);opacity:.5}
 
@@ -213,6 +296,7 @@ a:hover{color:var(--sky-brand-press)}
   .sky-btn-lg{width:auto}
   .sky-dl{align-items:flex-start}
   .sky-panel-foot{flex-direction:row;align-items:center;justify-content:space-between}
+  .sky-setting-control.is-field{grid-column:auto;width:12rem}
 }
 @media (min-width:768px){
   :root{--pad-x:2.5rem}
@@ -225,6 +309,12 @@ a:hover{color:var(--sky-brand-press)}
   .sky-h2{font-size:1.75rem}
   .sky-card{padding:1.75rem}
   .sky-logo img{width:4.875rem;height:4.875rem}
+  .sky-settings-layout{grid-template-columns:11rem minmax(0,1fr);gap:1.75rem;align-items:start}
+  .sky-settings-nav{
+    flex-direction:column;align-self:start;overflow:visible;margin:0;padding:.25rem 0;
+    border-bottom:0;border-right:1px solid var(--sky-fill)
+  }
+  .sky-settings-nav-link{width:calc(100% - 1rem);margin-right:1rem;white-space:normal}
 }
 @media (min-width:1024px){
   .sky-h1{font-size:3.5rem}
@@ -261,6 +351,9 @@ a:hover{color:var(--sky-brand-press)}
 }
 @media (prefers-reduced-motion:reduce){
   .sky-zone:hover .sky-zone-svg,.sky-zone:focus-visible .sky-zone-svg,.is-drag .sky-zone-svg{transform:none}
+  .sky-zone:hover .sky-zone-inner,
+  .sky-zone:focus-visible .sky-zone-inner,
+  .is-drag .sky-zone-inner{transform:translateY(-50%)}
 }
 
 
@@ -323,10 +416,16 @@ a:hover{color:var(--sky-brand-press)}
   filter:drop-shadow(0 16px 4px rgba(0,0,0,.65));
   transform:translateY(-10px)}
 
+/* label rides along with the cloud */
+.sky-choice:hover .sky-choice-inner,
+.sky-choice:focus-visible .sky-choice-inner{transform:translateY(calc(-50% - 10px))}
+
 .sky-choice:focus-visible{outline:2px solid var(--sky-white);outline-offset:6px}
 
-.sky-choice-inner{position:absolute;left:14%;right:14%;top:46%;bottom:6%;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+.sky-choice-inner{position:absolute;left:14%;right:14%;top:65%;
+  transform:translateY(-50%);
+  transition:transform var(--dur-base) var(--ease);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:.25rem;text-align:center;z-index:1;pointer-events:none}
 
 .sky-choice-title{font-family:var(--font-display);font-weight:400;font-size:1.25rem;
@@ -365,5 +464,94 @@ a:hover{color:var(--sky-brand-press)}
 @media (prefers-reduced-motion:reduce){
   .sky-choice:hover .sky-choice-svg,
   .sky-choice:focus-visible .sky-choice-svg{transform:none}
+  .sky-choice:hover .sky-choice-inner,
+  .sky-choice:focus-visible .sky-choice-inner{transform:translateY(-50%)}
   .sky-vid:hover{transform:none}
 }
+
+/* ============================================================
+   VIDEOS / SHORTS toggle — sliding squircle
+   Track is a translucent well; an opaque white thumb slides
+   under the active label, so the blue text reads through it.
+   ============================================================ */
+.sky-switchbar{
+  display:flex;
+  justify-content:flex-start;
+  margin-top:1.5rem;
+}
+
+.sky-seg{
+  position:relative;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+  padding:.3125rem;
+  border-radius:1rem;                 /* squircle, not a pill */
+  background:rgba(255,255,255,.28);
+  isolation:isolate;
+}
+
+/* the sliding white plate */
+.sky-seg-thumb{
+  position:absolute;
+  z-index:0;
+  top:.3125rem;
+  bottom:.3125rem;
+  left:.3125rem;
+  width:calc(50% - .3125rem);
+  border-radius:.75rem;
+  background:var(--sky-white);
+  box-shadow:0 2px 6px rgba(0,0,0,.18);
+  transition:transform var(--dur-base) var(--ease);
+  pointer-events:none;
+}
+.sky-seg[data-active="shorts"] .sky-seg-thumb{transform:translateX(100%)}
+
+.sky-seg-btn{
+  position:relative;
+  z-index:1;                          /* text sits above the white plate */
+  appearance:none;
+  border:0;
+  background:none;
+  cursor:pointer;
+  padding:.625rem 1.5rem;
+  border-radius:.75rem;
+  font-family:var(--font-body);
+  font-weight:600;
+  font-size:.9375rem;
+  line-height:1.2;
+  white-space:nowrap;
+  color:var(--sky-brand-press);        /* blue text on both sides */
+  transition:color var(--dur-base) var(--ease);
+}
+.sky-seg-btn[aria-selected="true"]{color:var(--sky-brand-text)}
+.sky-seg-btn:focus-visible{outline:2px solid var(--sky-white);outline-offset:3px}
+
+/* panels */
+.sky-panel-videos[hidden],
+.sky-panel-shorts[hidden]{display:none}
+
+/* shorts are vertical */
+.sky-vids--shorts{grid-template-columns:repeat(2,1fr)}
+.sky-vids--shorts .sky-vid img{aspect-ratio:9/16}
+@media (min-width:37.5rem){ .sky-vids--shorts{grid-template-columns:repeat(3,1fr)} }
+@media (min-width:48rem){   .sky-vids--shorts{grid-template-columns:repeat(4,1fr)} }
+@media (min-width:64rem){   .sky-vids--shorts{grid-template-columns:repeat(5,1fr)} }
+
+.sky-empty{
+  margin-top:1.75rem;
+  background:var(--sky-white);
+  border-radius:var(--radius);
+  padding:1.25rem;
+  box-shadow:var(--glow-rest);
+  color:var(--sky-ink);
+}
+
+@media (prefers-reduced-motion:reduce){
+  .sky-seg-thumb{transition:none}
+}
+
+/* The Videos/Shorts toggle belongs to the hero above it, so the section
+   it opens skips the full vertical rhythm — otherwise the hero's bottom
+   padding and the section's top padding stack into a ~250px void. */
+.sky-sec:has(.sky-switchbar){padding-block-start:0}

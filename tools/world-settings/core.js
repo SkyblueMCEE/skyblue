@@ -16,6 +16,24 @@ const LABELS = {
   saved_with_toggled_experiments: null
 };
 
+// Minecraft's toggle screen changes between releases. Keep this list separate
+// from LABELS: LABELS names anything we may discover in an existing world,
+// while this catalog contains the known tags the editor may offer to add.
+const AVAILABLE_EXPERIMENTS = [
+  { tag: "data_driven_items", label: "Holiday Creator Features", description: "Legacy data-driven item features used by some older creator worlds." },
+  { tag: "data_driven_biomes", label: "Custom Biomes", description: "Custom biome definitions supplied by behavior packs." },
+  { tag: "experimental_molang_features", label: "Upcoming Molang Features", description: "Molang queries and behavior that are still experimental." },
+  { tag: "upcoming_creator_features", label: "Upcoming Creator Features", description: "Creator components and formats that have not reached stable yet." },
+  { tag: "gametest", label: "Beta APIs (scripting)", description: "Beta Script API modules and related creator features." },
+  { tag: "villager_trades_rebalance", label: "Villager Trade Rebalancing", description: "Mojang's experimental villager trade changes." },
+  { tag: "experimental_creator_cameras", label: "Experimental Creator Cameras", description: "Experimental camera controls used by creator content." },
+  { tag: "jigsaw_structures", label: "Data-Driven Jigsaw Structures", description: "Data-driven structure pools and jigsaw generation." },
+  { tag: "short_sneaking", label: "Short Sneaking", description: "The older experimental short-sneaking behavior." },
+  { tag: "recipe_unlocking", label: "Recipe Unlocking", description: "The older experiment for unlocking recipes through gameplay." },
+  { tag: "deferred_technical_preview", label: "Technical Preview Features", description: "Preview-only rendering and technical features." },
+  { tag: "render_dragon_features", label: "Render Dragon Features for Creators", description: "Experimental Render Dragon graphics features for creator content." }
+];
+
 const META = ["experiments_ever_used", "saved_with_toggled_experiments"];
 
 const MAX_UNPACK = 64 * 1024 * 1024;
@@ -49,10 +67,81 @@ function prettify(tag) {
 const T_END = 0, T_BYTE = 1, T_SHORT = 2, T_INT = 3, T_LONG = 4, T_FLOAT = 5, T_DOUBLE = 6,
       T_BYTES = 7, T_STR = 8, T_LIST = 9, T_COMP = 10, T_INTS = 11, T_LONGS = 12;
 const DEC = new TextDecoder(), ENC = new TextEncoder();
-const CATALOG = ["data_driven_items", "data_driven_biomes", "experimental_molang_features",
-  "upcoming_creator_features", "gametest", "villager_trades_rebalance",
-  "experimental_creator_cameras", "jigsaw_structures", "recipe_unlocking",
-  "deferred_technical_preview"];
+
+const WORLD_SETTING_GROUPS = [
+  {
+    id: "world-setup",
+    title: "World setup",
+    description: "The world's default mode, difficulty, seed, and startup rules.",
+    settings: [
+      { key: "GameType", label: "Default game mode", description: "The mode new players use when they first join.", kind: "select", nbtType: T_INT, defaultValue: 0,
+        options: [{ value: 0, label: "Survival" }, { value: 1, label: "Creative" }, { value: 2, label: "Adventure" }] },
+      { key: "Difficulty", label: "Difficulty", description: "Controls hostile mobs, damage, and hunger.", kind: "select", nbtType: T_INT, defaultValue: 2,
+        options: [{ value: 0, label: "Peaceful" }, { value: 1, label: "Easy" }, { value: 2, label: "Normal" }, { value: 3, label: "Hard" }] },
+      { key: "hardcore", label: "Hardcore", description: "Locks the world to Survival on Hard difficulty with cheats off.", kind: "boolean", nbtType: T_BYTE, defaultValue: false },
+      { key: "RandomSeed", label: "World seed", description: "Read directly from level.dat as a signed 64-bit number. Changing it only affects chunks generated later.", kind: "long", nbtType: T_LONG, defaultValue: "0", min: "-9223372036854775808", max: "9223372036854775807" },
+      { key: "ForceGameType", label: "Force default game mode", description: "Forces joining players back into the world's default mode.", kind: "boolean", nbtType: T_BYTE, defaultValue: false }
+    ]
+  },
+  {
+    id: "player-access",
+    title: "Player access",
+    description: "Choose what new players can do and whether commands are available.",
+    settings: [
+      { key: "defaultPlayerPermissionLevel", label: "Default player permission", description: "Visitor is view-only; Members can play normally; Operators can use commands.", kind: "select", nbtType: T_INT, defaultValue: 1,
+        options: [{ value: 0, label: "Visitor" }, { value: 1, label: "Member" }, { value: 2, label: "Operator" }, { value: 3, label: "Custom" }] },
+      { key: "commandsEnabled", label: "Cheats", description: "Allows commands and disables achievements for the world.", kind: "boolean", nbtType: T_BYTE, defaultValue: false }
+    ]
+  },
+  {
+    id: "world-options",
+    title: "World options",
+    description: "Common gameplay choices that are useful to reach quickly.",
+    settings: [
+      { key: "showcoordinates", label: "Show coordinates", description: "Displays the player's position on screen.", kind: "boolean", nbtType: T_BYTE, defaultValue: false },
+      { key: "naturalregeneration", label: "Natural regeneration", description: "Lets players regain health naturally when their hunger is high enough.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "pvp", label: "Friendly fire", description: "Lets players damage one another.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "keepinventory", label: "Keep inventory", description: "Players keep their items and experience after dying.", kind: "boolean", nbtType: T_BYTE, defaultValue: false },
+      { key: "domobspawning", label: "Mob spawning", description: "Allows mobs to spawn naturally.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "mobgriefing", label: "Mob griefing", description: "Allows mobs such as creepers and endermen to change blocks.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "bonusChestEnabled", label: "Bonus chest", description: "Enables a starter chest near the world spawn.", kind: "boolean", nbtType: T_BYTE, defaultValue: false },
+      { key: "startWithMapEnabled", label: "Starting map", description: "Gives new players a map when they join.", kind: "boolean", nbtType: T_BYTE, defaultValue: false },
+      { key: "educationFeaturesEnabled", label: "Education features", description: "Enables Minecraft Education world features when supported by the game.", kind: "boolean", nbtType: T_BYTE, defaultValue: false }
+    ]
+  },
+  {
+    id: "gamerules",
+    title: "Gamerules",
+    description: "Detailed rules for time, weather, drops, commands, and respawning.",
+    settings: [
+      { key: "dodaylightcycle", label: "Daylight cycle", description: "Allows time to move from day to night.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "doweathercycle", label: "Weather cycle", description: "Allows the weather to change naturally.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "dofiretick", label: "Fire spreads", description: "Allows fire to spread and burn out.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "tntexplodes", label: "TNT explodes", description: "Allows TNT blocks to ignite and explode.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "domobloot", label: "Mob loot", description: "Mobs drop items when killed.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "dotiledrops", label: "Block drops", description: "Blocks drop items when broken.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "doimmediaterespawn", label: "Immediate respawn", description: "Skips the death screen and respawns players immediately.", kind: "boolean", nbtType: T_BYTE, defaultValue: false },
+      { key: "doinsomnia", label: "Insomnia", description: "Allows phantoms to spawn when players have not slept.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "showdeathmessages", label: "Death messages", description: "Shows a chat message when a player dies.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "commandblocksenabled", label: "Command blocks", description: "Allows command blocks to run.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "commandblockoutput", label: "Command block output", description: "Shows command block output in chat.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "sendcommandfeedback", label: "Command feedback", description: "Shows command results to the player who ran them.", kind: "boolean", nbtType: T_BYTE, defaultValue: true },
+      { key: "randomtickspeed", label: "Random tick speed", description: "Controls random block updates; Bedrock's default is 1.", kind: "integer", nbtType: T_INT, defaultValue: "1", min: 0, max: 4096 },
+      { key: "spawnradius", label: "Respawn radius", description: "Maximum distance from world spawn used for player respawning.", kind: "integer", nbtType: T_INT, defaultValue: "5", min: 0, max: 128 },
+      { key: "playerssleepingpercentage", label: "Players needed to sleep", description: "Percentage of online players needed to skip the night.", suffix: "%", kind: "integer", nbtType: T_INT, defaultValue: "100", min: 0, max: 100 }
+    ]
+  }
+];
+
+const PACK_REQUIREMENT_SETTING = {
+  key: "texturePacksRequired",
+  label: "Require resource packs",
+  description: "Players must accept the world's resource packs before joining.",
+  kind: "boolean",
+  nbtType: T_BYTE,
+  defaultValue: false,
+  groupId: "packs"
+};
 
 class NbtReader {
   constructor(bytes) { this.b = bytes; this.dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength); this.p = 0; }
@@ -149,11 +238,102 @@ function experimentsOf(root) {
   return e && e.type === T_COMP ? e.value : null;
 }
 
+function worldSettingDefinitions() {
+  const defs = [];
+  WORLD_SETTING_GROUPS.forEach(group => {
+    group.settings.forEach(setting => defs.push(Object.assign({ groupId: group.id }, setting)));
+  });
+  defs.push(PACK_REQUIREMENT_SETTING);
+  return defs;
+}
+
+function normalizedSettingValue(setting, value) {
+  if (setting.kind === "boolean") return Number(value) !== 0;
+  if (setting.kind === "select") return Number(value);
+  return String(value);
+}
+
+function readWorldSettings(root) {
+  const map = root.value;
+  return worldSettingDefinitions().map(setting => {
+    const entry = map.get(setting.key);
+    const value = normalizedSettingValue(setting, entry ? entry.value : setting.defaultValue);
+    return Object.assign({}, setting, {
+      value: value,
+      original: value,
+      existed: !!entry,
+      sourceType: entry ? entry.type : null
+    });
+  });
+}
+
+function settingChanged(setting) {
+  return setting.value !== setting.original;
+}
+
+function validateSetting(setting) {
+  if (setting.kind === "boolean") return null;
+
+  if (setting.kind === "select") {
+    if (!Number.isInteger(setting.value)) return setting.label + " has an invalid selection.";
+    if (settingChanged(setting) && !setting.options.some(option => option.value === setting.value)) {
+      return setting.label + " has an unsupported value.";
+    }
+    return null;
+  }
+
+  const text = String(setting.value).trim();
+  if (!/^-?\d+$/.test(text)) return setting.label + " must be a whole number.";
+
+  if (setting.kind === "long") {
+    const value = BigInt(text);
+    if (value < BigInt(setting.min) || value > BigInt(setting.max)) {
+      return setting.label + " is outside Minecraft's supported range.";
+    }
+    return null;
+  }
+
+  const value = Number(text);
+  if (!Number.isSafeInteger(value) || value < setting.min || value > setting.max) {
+    return setting.label + " must be from " + setting.min + " to " + setting.max + ".";
+  }
+  return null;
+}
+
+function validateWorldSettings(settings) {
+  for (const setting of settings) {
+    const message = validateSetting(setting);
+    if (message) return { valid: false, key: setting.key, message: message };
+  }
+  return { valid: true };
+}
+
+function encodedSettingValue(setting) {
+  if (setting.kind === "boolean") return setting.value ? 1 : 0;
+  if (setting.kind === "long") return BigInt(String(setting.value).trim());
+  return Number(setting.value);
+}
+
+function applyWorldSettings(root, settings) {
+  const map = root.value;
+  settings.forEach(setting => {
+    if (!settingChanged(setting)) return;
+    map.set(setting.key, { type: setting.nbtType, value: encodedSettingValue(setting) });
+  });
+}
+
 function applySelection(root, rows) {
+  const changed = rows.some(r => r.on !== r.original);
+  if (!changed) return;
+
   const map = root.value;
   const prev = experimentsOf(root);
   const em = prev || new Map();
-  rows.forEach(r => { if (r.on) em.set(r.tag, { type: T_BYTE, value: 1 }); else em.delete(r.tag); });
+  rows.forEach(r => {
+    if (r.on === r.original) return;
+    if (r.on) em.set(r.tag, { type: T_BYTE, value: 1 });
+    else em.delete(r.tag);
+  });
   if (rows.some(r => r.on)) {
     em.set("experiments_ever_used", { type: T_BYTE, value: 1 });
     em.set("saved_with_toggled_experiments", { type: T_BYTE, value: 1 });
@@ -165,19 +345,34 @@ function applySelection(root, rows) {
   else map.set("experiments", { type: T_COMP, value: em });
 }
 
-function verifyRoundTrip(bytes, rows) {
+function verifyRoundTrip(bytes, rows, settings) {
   const doc = parseLevelDat(bytes);
   const em = experimentsOf(doc.root);
+  const experimentsChanged = rows.some(r => r.on !== r.original);
   const anyOn = rows.some(r => r.on);
-  if (!anyOn) return em === null;
-  if (!em) return false;
-  for (const r of rows) {
-    const e = em.get(r.tag);
-    if (r.on) { if (!e || e.type !== T_BYTE || e.value !== 1) return false; }
-    else if (e) return false;
+  if (experimentsChanged) {
+    for (const r of rows) {
+      if (r.on === r.original) continue;
+      const e = em && em.get(r.tag);
+      if (r.on) { if (!e || e.type !== T_BYTE || e.value !== 1) return false; }
+      else if (e) return false;
+    }
+    if (anyOn) {
+      if (!em) return false;
+      const a = em.get("experiments_ever_used"), b = em.get("saved_with_toggled_experiments");
+      if (!a || a.value !== 1 || !b || b.value !== 1) return false;
+    } else if (em && (em.has("experiments_ever_used") || em.has("saved_with_toggled_experiments"))) {
+      return false;
+    }
   }
-  const a = em.get("experiments_ever_used"), b = em.get("saved_with_toggled_experiments");
-  return !!a && a.value === 1 && !!b && b.value === 1;
+
+  const map = doc.root.value;
+  for (const setting of settings || []) {
+    if (!settingChanged(setting)) continue;
+    const entry = map.get(setting.key);
+    if (!entry || entry.type !== setting.nbtType || entry.value !== encodedSettingValue(setting)) return false;
+  }
+  return true;
 }
 
 
@@ -240,4 +435,3 @@ function buildZip(entries){
     ev.setUint32(12, cdSize, true); ev.setUint32(16, offset, true);
     return new Blob([...parts, ...central, end], { type: "application/octet-stream" });
   }
-

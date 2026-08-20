@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Popular videos — SKYBLUE</title>
+<title>SkyblueMC Popular videos</title>
 <meta name="description" content="Minecraft Bedrock and Education tutorials, builds and classroom ideas.">
 <link rel="icon" href="../assets/logo.png">
 <link rel="stylesheet" href="../styles.css">
@@ -27,26 +27,40 @@
     </defs>
   </svg>
 
+  <!-- HEADER:START -->
   <header class="sky-header">
     <div class="sky-wrap">
       <a class="sky-logo" href="../"><img src="../assets/logo.png" alt="SKYBLUE" width="78" height="78"></a>
       <div class="sky-divider" role="presentation"></div>
     </div>
   </header>
+  <!-- HEADER:END -->
 
   <main class="sky-main">
 
     <section class="sky-hero">
       <div class="sky-wrap">
         <h1 class="sky-h1">Popular videos</h1>
-        <p class="sky-lede">Setup guides for Minecraft Education and Bedrock — mods, resource packs, shaders and game modes you can build lessons around.</p>
-        <p class="sky-privacy"><span class="sky-warn-icon" aria-hidden="true"></span> Thumbnails load from YouTube so they stay current. Nothing else is loaded, and no video plays until you click.</p>
+        <p class="sky-lede">Short, concise guides and tutorials for Minecraft Education and Bedrock!</p>
+        <p class="sky-privacy"><span class="sky-warn-icon" aria-hidden="true"></span> If you have a video suggestion, leave a comment on any video! Don't open a GitHub issue.</p>
       </div>
     </section>
 
     <section class="sky-sec" aria-labelledby="vids-h">
       <div class="sky-wrap">
         <h2 class="vh" id="vids-h">Videos</h2>
+
+        <div class="sky-switchbar">
+          <div class="sky-seg" id="seg" data-active="videos" role="tablist" aria-label="Choose video type">
+            <span class="sky-seg-thumb" aria-hidden="true"></span>
+            <button class="sky-seg-btn" id="tab-videos" type="button" role="tab"
+                    aria-selected="true"  aria-controls="panel-videos">Videos</button>
+            <button class="sky-seg-btn" id="tab-shorts" type="button" role="tab"
+                    aria-selected="false" aria-controls="panel-shorts">Shorts</button>
+          </div>
+        </div>
+
+        <div class="sky-panel-videos" id="panel-videos" role="tabpanel" aria-labelledby="tab-videos">
         <ul class="sky-vids">
           <!-- VIDEOS:START -->
           <li class="sky-vid">
@@ -159,6 +173,74 @@
           </li>
           <!-- VIDEOS:END -->
         </ul>
+        </div>
+
+        <div class="sky-panel-shorts" id="panel-shorts" role="tabpanel" aria-labelledby="tab-shorts" hidden>
+        <ul class="sky-vids sky-vids--shorts">
+          <!-- SHORTS:START -->
+          <li class="sky-vid">
+            <a href="https://www.youtube.com/shorts/VX7AbQtyr0M" rel="noopener">
+              <img src="https://img.youtube.com/vi/VX7AbQtyr0M/oar2.jpg"
+                   data-fallback-1="https://img.youtube.com/vi/VX7AbQtyr0M/hqdefault.jpg"
+                   data-fallback-2="../assets/thumbs/VX7AbQtyr0M.jpg"
+                   alt="" width="270" height="480" loading="lazy">
+              <span class="sky-vid-body">
+                <p class="sky-vid-title">Minecraft Iron Man Addon</p>
+                <p class="sky-vid-meta">2.8K views</p>
+              </span>
+            </a>
+          </li>
+          <li class="sky-vid">
+            <a href="https://www.youtube.com/shorts/yVvz6urEWSw" rel="noopener">
+              <img src="https://img.youtube.com/vi/yVvz6urEWSw/oar2.jpg"
+                   data-fallback-1="https://img.youtube.com/vi/yVvz6urEWSw/hqdefault.jpg"
+                   data-fallback-2="../assets/thumbs/yVvz6urEWSw.jpg"
+                   alt="" width="270" height="480" loading="lazy">
+              <span class="sky-vid-body">
+                <p class="sky-vid-title">How To Get Verity In Minecraft Education Edition</p>
+                <p class="sky-vid-meta">2.7K views</p>
+              </span>
+            </a>
+          </li>
+          <li class="sky-vid">
+            <a href="https://www.youtube.com/shorts/p8lRDDy3Usk" rel="noopener">
+              <img src="https://img.youtube.com/vi/p8lRDDy3Usk/oar2.jpg"
+                   data-fallback-1="https://img.youtube.com/vi/p8lRDDy3Usk/hqdefault.jpg"
+                   data-fallback-2="../assets/thumbs/p8lRDDy3Usk.jpg"
+                   alt="" width="270" height="480" loading="lazy">
+              <span class="sky-vid-body">
+                <p class="sky-vid-title">Hyperion in Vanilla Minecraft Be Like...</p>
+                <p class="sky-vid-meta">1.9K views</p>
+              </span>
+            </a>
+          </li>
+          <li class="sky-vid">
+            <a href="https://www.youtube.com/shorts/N_x7MxXhPPo" rel="noopener">
+              <img src="https://img.youtube.com/vi/N_x7MxXhPPo/oar2.jpg"
+                   data-fallback-1="https://img.youtube.com/vi/N_x7MxXhPPo/hqdefault.jpg"
+                   data-fallback-2="../assets/thumbs/N_x7MxXhPPo.jpg"
+                   alt="" width="270" height="480" loading="lazy">
+              <span class="sky-vid-body">
+                <p class="sky-vid-title">Minecraft Iron Man Addon 3</p>
+                <p class="sky-vid-meta">978 views</p>
+              </span>
+            </a>
+          </li>
+          <li class="sky-vid">
+            <a href="https://www.youtube.com/shorts/8qcPLNdAlMI" rel="noopener">
+              <img src="https://img.youtube.com/vi/8qcPLNdAlMI/oar2.jpg"
+                   data-fallback-1="https://img.youtube.com/vi/8qcPLNdAlMI/hqdefault.jpg"
+                   data-fallback-2="../assets/thumbs/8qcPLNdAlMI.jpg"
+                   alt="" width="270" height="480" loading="lazy">
+              <span class="sky-vid-body">
+                <p class="sky-vid-title">Minecraft Iron Man Addon 2</p>
+                <p class="sky-vid-meta">831 views</p>
+              </span>
+            </a>
+          </li>
+          <!-- SHORTS:END -->
+        </ul>
+        </div>
       </div>
     </section>
 
@@ -178,13 +260,15 @@
     </section>
   </main>
 
+  <!-- FOOTER:START -->
   <footer class="sky-footer">
     <div class="sky-wrap sky-foot-in">
-      <p>SKYBLUE runs entirely in your browser. No uploads, no accounts, no tracking, no cookies.</p>
-      <p>Not affiliated with Mojang or Microsoft.</p>
-      <p><a href="../">Back to SKYBLUE</a> &nbsp;·&nbsp; <a href="https://github.com/SkyblueMCEE/skyblue">View source on GitHub</a></p>
+      <p>This website runs entirely in your browser! No uploads, no accounts, no tracking, and certainly no cookies.</p>
+      <p>Built on the Minecraft Bedrock community's NBT and level.dat documentation. Not affiliated with Mojang or Microsoft.</p>
+      <p><a href="https://github.com/SkyblueMCEE/skyblue">View source on GitHub</a></p>
     </div>
   </footer>
+  <!-- FOOTER:END -->
 </div>
 
 <script>
@@ -204,6 +288,37 @@ document.querySelectorAll('img[data-fallback-1]').forEach(function (img) {
     if (next) img.src = next;
   });
 });
+</script>
+
+<script>
+/* Videos / Shorts toggle. The white thumb slides; panels swap. */
+(function () {
+  var seg = document.getElementById('seg');
+  if (!seg) return;
+  var tabs = { videos: document.getElementById('tab-videos'), shorts: document.getElementById('tab-shorts') };
+  var panels = { videos: document.getElementById('panel-videos'), shorts: document.getElementById('panel-shorts') };
+
+  function show(which) {
+    seg.dataset.active = which;
+    Object.keys(tabs).forEach(function (k) {
+      tabs[k].setAttribute('aria-selected', String(k === which));
+      panels[k].hidden = (k !== which);
+    });
+  }
+
+  Object.keys(tabs).forEach(function (k) {
+    tabs[k].addEventListener('click', function () { show(k); });
+  });
+
+  /* left/right arrows move between tabs, as expected of a tablist */
+  seg.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    var next = seg.dataset.active === 'videos' ? 'shorts' : 'videos';
+    show(next);
+    tabs[next].focus();
+    e.preventDefault();
+  });
+})();
 </script>
 </body>
 </html>
