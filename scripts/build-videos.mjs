@@ -41,6 +41,16 @@ const chunk = (arr, n) =>
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function pickThumbnail(thumbnails, order, exclude = '') {
+  for (const name of order) {
+    const url = thumbnails?.[name]?.url;
+    if (url && url !== exclude) return url;
+  }
+  return '';
+}
+
 /* PT1M32S -> 92 */
 function isoToSeconds(iso) {
   const m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso);
@@ -83,11 +93,20 @@ for (const group of chunk(ids, 50)) {
   const r = await api('videos', { part: 'snippet,statistics,status,contentDetails', id: group.join(',') });
   r.items.forEach((v) => {
     if (v.status?.privacyStatus !== 'public') return;
+    const thumbnails = v.snippet.thumbnails || {};
+    const thumbnailUrl = pickThumbnail(thumbnails, ['maxres', 'standard', 'high', 'medium', 'default']);
+    const fallbackThumbnailUrl = pickThumbnail(
+      thumbnails,
+      ['high', 'medium', 'default', 'standard', 'maxres'],
+      thumbnailUrl
+    );
     videos.push({
       id: v.id,
       title: v.snippet.title,
       views: Number(v.statistics?.viewCount || 0),
-      seconds: isoToSeconds(v.contentDetails?.duration || '')
+      seconds: isoToSeconds(v.contentDetails?.duration || ''),
+      thumbnailUrl,
+      fallbackThumbnailUrl
     });
   });
 }
@@ -96,18 +115,59 @@ for (const group of chunk(ids, 50)) {
    The API exposes no "is this a Short" flag. Duration alone is unreliable
    (plenty of normal tutorials run under 3 minutes), so we use duration only
    to narrow the candidates, then confirm each one by asking YouTube whether
-   /shorts/<id> resolves. A Short returns 200; anything else redirects. */
+   /shorts/<id> resolves. A Short returns 200; a regular video redirects to
+   /watch?v=<id>. Unexpected responses are retried and then fail the build so
+   a temporary YouTube/network problem cannot move a Short into Videos. */
 const candidates = videos.filter((v) => v.seconds > 0 && v.seconds <= 185);
 console.log(`\nchecking ${candidates.length} short-duration candidates...`);
 
+async function isShort(v) {
+  const url = 'https://www.youtube.com/shorts/' + v.id;
+  let lastError;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const r = await fetch(url, {
+        method: 'HEAD',
+        redirect: 'manual',
+        signal: AbortSignal.timeout(12000),
+        headers: {
+          'Accept': 'text/html',
+          'User-Agent': 'Mozilla/5.0 (compatible; SkyBlueVideoUpdater/1.0)'
+        }
+      });
+
+      if (r.status === 200) return true;
+
+      if (r.status >= 300 && r.status < 400) {
+        const location = r.headers.get('location');
+        if (location) {
+          const target = new URL(location, 'https://www.youtube.com');
+          if (target.pathname === '/watch' && target.searchParams.get('v') === v.id) {
+            return false;
+          }
+        }
+      }
+
+      lastError = new Error(`unexpected ${r.status}${r.headers.get('location') ? ` -> ${r.headers.get('location')}` : ''}`);
+    } catch (error) {
+      lastError = error;
+    }
+
+    if (attempt < 3) await sleep(500 * (2 ** (attempt - 1)));
+  }
+
+  throw new Error(
+    `could not classify ${v.id} (${v.title}) after 3 attempts: ${lastError?.message || lastError}`
+  );
+}
+
 const shortIds = new Set();
 for (const group of chunk(candidates, 8)) {
-  await Promise.all(group.map(async (v) => {
-    try {
-      const r = await fetch('https://www.youtube.com/shorts/' + v.id, { redirect: 'manual' });
-      if (r.status === 200) shortIds.add(v.id);
-    } catch { /* network hiccup: treat as long-form */ }
-  }));
+  const results = await Promise.all(group.map(async (v) => ({ v, short: await isShort(v) })));
+  results.forEach(({ v, short }) => {
+    if (short) shortIds.add(v.id);
+  });
 }
 console.log(`  ${shortIds.size} confirmed shorts`);
 
@@ -126,13 +186,19 @@ topShorts.forEach((v, i) =>
 /* ---------- 3. refresh local thumbnail fallbacks ---------- */
 await mkdir(THUMB_DIR, { recursive: true });
 for (const v of [...top, ...topShorts]) {
-  for (const q of ['maxresdefault', 'hqdefault']) {
-    const res = await fetch(`https://img.youtube.com/vi/${v.id}/${q}.jpg`);
+  const thumbnailCandidates = [...new Set([
+    v.thumbnailUrl,
+    v.fallbackThumbnailUrl,
+    `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`
+  ].filter(Boolean))];
+
+  for (const url of thumbnailCandidates) {
+    const res = await fetch(url);
     if (res.ok) {
       const buf = Buffer.from(await res.arrayBuffer());
       if (buf.length > 5000) {
         await writeFile(join(THUMB_DIR, `${v.id}.jpg`), buf);
-        console.log(`  thumb ${v.id} (${q}, ${buf.length} bytes)`);
+        console.log(`  thumb ${v.id} (${buf.length} bytes)`);
         break;
       }
     }
@@ -142,8 +208,8 @@ for (const v of [...top, ...topShorts]) {
 /* ---------- 4. rewrite both card lists ---------- */
 const card = (v, isShort) => `          <li class="sky-vid">
             <a href="https://www.youtube.com/${isShort ? 'shorts/' : 'watch?v='}${v.id}" rel="noopener">
-              <img src="https://img.youtube.com/vi/${v.id}/${isShort ? 'oar2' : 'maxresdefault'}.jpg"
-                   data-fallback-1="https://img.youtube.com/vi/${v.id}/hqdefault.jpg"
+              <img src="${esc(v.thumbnailUrl || `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`)}"
+                   data-fallback-1="${esc(v.fallbackThumbnailUrl || `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`)}"
                    data-fallback-2="../assets/thumbs/${v.id}.jpg"
                    alt="" width="${isShort ? 270 : 480}" height="${isShort ? 480 : 270}" loading="lazy">
               <span class="sky-vid-body">
