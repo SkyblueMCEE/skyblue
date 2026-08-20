@@ -53,7 +53,7 @@
       </div>
     </section>
 
-    <section class="sky-sec" aria-labelledby="zone-h">
+    <section class="sky-sec" id="editor-start-sec" aria-labelledby="zone-h">
       <div class="sky-wrap">
         <h2 class="vh" id="zone-h">Open a world file</h2>
         <button class="sky-zone" id="zone" type="button">
@@ -70,6 +70,21 @@
         <input class="vh" id="file" type="file" accept=".mcworld,.mctemplate,.zip">
         <p class="vh" role="status" aria-live="polite" id="status"></p>
         <p class="sky-zone-note" id="note" hidden></p>
+      </div>
+    </section>
+
+    <section class="sky-sec" id="download-ready-sec" hidden aria-labelledby="download-ready-h">
+      <div class="sky-wrap">
+        <div class="sky-card sky-ready-card">
+          <span class="sky-kicker" id="download-ready-kicker">Download ready</span>
+          <h2 class="sky-h2" id="download-ready-h">Your modified world is waiting</h2>
+          <p class="sky-ready-copy" id="download-ready-copy">The file stayed in this browser while you completed the Linkvertise step. Finish the download below.</p>
+          <div class="sky-ready-actions">
+            <button class="sky-btn sky-btn-lg" id="download-ready" type="button" disabled>Checking for your file…</button>
+            <a class="sky-btn-ghost" href="./" id="download-start-over">Edit another world</a>
+          </div>
+          <p class="sky-section-note" id="download-ready-status" role="status" aria-live="polite">Looking for the modified world stored on this device…</p>
+        </div>
       </div>
     </section>
 
@@ -92,7 +107,7 @@
         </div>
         <div class="sky-dl">
           <button class="sky-btn sky-btn-lg" id="download" type="button">Save a new copy</button>
-          <p class="sky-aftercare">Your original file is untouched. Import the new copy in Minecraft the way you normally import a world.</p>
+          <p class="sky-aftercare">Saving opens a short Linkvertise ad page. Your modified world stays in this browser and is never uploaded. Your original file is untouched.</p>
         </div>
       </div>
     </section>

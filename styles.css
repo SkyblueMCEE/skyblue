@@ -87,6 +87,7 @@ p{margin:0}
 a{color:var(--sky-ink);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;transition:color var(--dur-base) var(--ease)}
 a:hover{color:var(--sky-brand-press)}
 .sky-card a:hover{color:var(--sky-brand-text)}
+[hidden]{display:none!important}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
 /* ---------- 4. layout ---------- */
@@ -275,6 +276,11 @@ a:hover{color:var(--sky-brand-press)}
 /* download */
 .sky-dl{display:flex;flex-direction:column;gap:.875rem}
 .sky-aftercare{font-size:.9375rem;max-width:var(--measure);margin-inline:auto}
+.sky-ready-card{max-width:42rem;margin-inline:auto}
+.sky-ready-copy{margin-top:.625rem;max-width:var(--measure);color:rgba(6,36,48,.76)}
+.sky-ready-actions{display:flex;flex-direction:column;align-items:stretch;gap:.75rem;margin-top:1.5rem}
+.sky-ready-actions .sky-btn-ghost{justify-content:center}
+.sky-ready-card .sky-section-note{margin-top:1rem}
 
 /* warnings */
 .sky-h2{font-size:1.5rem;color:var(--sky-ink)}
@@ -295,6 +301,7 @@ a:hover{color:var(--sky-brand-press)}
   .sky-zone-sub{font-size:.9375rem}
   .sky-btn-lg{width:auto}
   .sky-dl{align-items:flex-start}
+  .sky-ready-actions{flex-direction:row;align-items:center}
   .sky-panel-foot{flex-direction:row;align-items:center;justify-content:space-between}
   .sky-setting-control.is-field{grid-column:auto;width:12rem}
 }

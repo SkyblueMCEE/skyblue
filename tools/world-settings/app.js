@@ -22,8 +22,21 @@
     note: $("note"), status: $("status"), panelSec: $("panel-sec"), panelH: $("panel-h"),
     panelMeta: $("panel-meta"), settingsNav: $("settings-nav"), settingsGroups: $("settings-groups"),
     count: $("count"), reset: $("reset"), download: $("download"),
-    viewCount: $("view-count"), downloadCount: $("download-count")
+    viewCount: $("view-count"), downloadCount: $("download-count"),
+    editorStartSec: $("editor-start-sec"), downloadReadySec: $("download-ready-sec"),
+    downloadReady: $("download-ready"), downloadReadyKicker: $("download-ready-kicker"),
+    downloadReadyHeading: $("download-ready-h"), downloadReadyCopy: $("download-ready-copy"),
+    downloadReadyStatus: $("download-ready-status")
   };
+
+  var LINKVERTISE_LIVE_URL = "https://link-center.net/7806078/HB8fxxmmD4Y2";
+  var LINKVERTISE_URL = ["localhost", "127.0.0.1", "::1"].indexOf(window.location.hostname) !== -1
+    ? window.location.pathname + "?download=ready"
+    : LINKVERTISE_LIVE_URL;
+  var PENDING_DOWNLOAD_DB = "skyblue-world-settings";
+  var PENDING_DOWNLOAD_STORE = "pending-downloads";
+  var PENDING_DOWNLOAD_KEY = "latest";
+  var PENDING_DOWNLOAD_MAX_AGE = 2 * 60 * 60 * 1000;
 
   var COUNTER_API = "https://page-views-api.ratneshc.com/api/v1";
   var COUNTER_SITE = window.location.hostname.toLowerCase();
@@ -92,6 +105,146 @@
   function initializeCounters() {
     incrementCounter(VIEW_COUNTER_PATH, el.viewCount);
     readCounter(DOWNLOAD_COUNTER_PATH, el.downloadCount);
+  }
+
+  function openPendingDownloadDatabase() {
+    return new Promise(function (resolve, reject) {
+      if (!window.indexedDB) {
+        reject(new Error("indexeddb-unavailable"));
+        return;
+      }
+
+      var request = window.indexedDB.open(PENDING_DOWNLOAD_DB, 1);
+      request.onupgradeneeded = function () {
+        var database = request.result;
+        if (!database.objectStoreNames.contains(PENDING_DOWNLOAD_STORE)) {
+          database.createObjectStore(PENDING_DOWNLOAD_STORE, { keyPath: "id" });
+        }
+      };
+      request.onsuccess = function () { resolve(request.result); };
+      request.onerror = function () { reject(request.error || new Error("indexeddb-open")); };
+    });
+  }
+
+  function usePendingDownloadStore(mode, operation) {
+    return openPendingDownloadDatabase().then(function (database) {
+      return new Promise(function (resolve, reject) {
+        var transaction;
+        var request;
+        try {
+          transaction = database.transaction(PENDING_DOWNLOAD_STORE, mode);
+          request = operation(transaction.objectStore(PENDING_DOWNLOAD_STORE));
+        } catch (error) {
+          database.close();
+          reject(error);
+          return;
+        }
+
+        var result;
+        request.onsuccess = function () { result = request.result; };
+        request.onerror = function () { reject(request.error || new Error("indexeddb-request")); };
+        transaction.oncomplete = function () {
+          database.close();
+          resolve(result);
+        };
+        transaction.onerror = function () {
+          database.close();
+          reject(transaction.error || new Error("indexeddb-transaction"));
+        };
+        transaction.onabort = function () {
+          database.close();
+          reject(transaction.error || new Error("indexeddb-abort"));
+        };
+      });
+    });
+  }
+
+  function storePendingDownload(blob, fileName) {
+    return usePendingDownloadStore("readwrite", function (store) {
+      return store.put({
+        id: PENDING_DOWNLOAD_KEY,
+        blob: blob,
+        fileName: fileName,
+        createdAt: Date.now()
+      });
+    });
+  }
+
+  function readPendingDownload() {
+    return usePendingDownloadStore("readonly", function (store) {
+      return store.get(PENDING_DOWNLOAD_KEY);
+    });
+  }
+
+  function clearPendingDownload() {
+    return usePendingDownloadStore("readwrite", function (store) {
+      return store.delete(PENDING_DOWNLOAD_KEY);
+    });
+  }
+
+  function saveBlobToDevice(blob, fileName) {
+    var objectUrl = URL.createObjectURL(blob);
+    var anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 4000);
+  }
+
+  function isDownloadReturn() {
+    return new URLSearchParams(window.location.search).get("download") === "ready";
+  }
+
+  function showMissingPendingDownload(message) {
+    el.downloadReadyKicker.textContent = "Download unavailable";
+    el.downloadReadyHeading.textContent = "We could not find your modified world";
+    el.downloadReadyCopy.textContent = "Modified worlds are stored only in the browser that created them. Nothing was uploaded or saved on our servers.";
+    el.downloadReady.hidden = true;
+    el.downloadReadyStatus.textContent = message;
+  }
+
+  function initializeDownloadReturn() {
+    if (!isDownloadReturn()) return;
+
+    el.editorStartSec.hidden = true;
+    el.panelSec.hidden = true;
+    el.downloadReadySec.hidden = false;
+
+    readPendingDownload().then(function (pending) {
+      if (!pending || !(pending.blob instanceof Blob) || !pending.fileName) {
+        showMissingPendingDownload("Return to the editor and create the file again on this device.");
+        return;
+      }
+
+      if (!pending.createdAt || Date.now() - pending.createdAt > PENDING_DOWNLOAD_MAX_AGE) {
+        clearPendingDownload().catch(function () {});
+        showMissingPendingDownload("That temporary file expired. Return to the editor and create it again.");
+        return;
+      }
+
+      el.downloadReady.disabled = false;
+      el.downloadReady.textContent = "Download " + pending.fileName;
+      el.downloadReadyStatus.textContent = "Ready on this device. The temporary copy is removed after downloading.";
+
+      el.downloadReady.addEventListener("click", function () {
+        el.downloadReady.disabled = true;
+        el.downloadReady.textContent = "Starting download…";
+        saveBlobToDevice(pending.blob, pending.fileName);
+        incrementCounter(DOWNLOAD_COUNTER_PATH, el.downloadCount);
+        clearPendingDownload().catch(function (error) {
+          console.error("[skyblue] Could not remove the temporary download.", error);
+        });
+        pending = null;
+        window.history.replaceState(null, "", window.location.pathname);
+        el.downloadReady.textContent = "Downloaded";
+        el.downloadReadyStatus.textContent = "Saved successfully. Import the new copy in Minecraft the way you normally import a world.";
+      }, { once: true });
+    }).catch(function (error) {
+      console.error("[skyblue] Could not read the temporary download.", error);
+      showMissingPendingDownload("Browser storage is unavailable. Return to the editor and create the file again.");
+    });
   }
 
   var ERRORS = {
@@ -840,16 +993,16 @@
         if (!packsOkay) throw new Error("safety-check");
 
         var base = (state.worldName || "world").replace(/[^\w\- ]+/g, "").trim() || "world";
-        var anchor = document.createElement("a");
-        anchor.href = URL.createObjectURL(blob);
-        anchor.download = base + "-skyblue.mcworld";
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        incrementCounter(DOWNLOAD_COUNTER_PATH, el.downloadCount);
-        var objectUrl = anchor.href;
-        setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 4000);
-        say("Saved " + anchor.download + ". Your original file is unchanged.", false);
+        var fileName = base + "-skyblue.mcworld";
+        return storePendingDownload(blob, fileName).then(function () {
+          say("Your modified world is ready. Opening the download page…", false);
+          window.location.assign(LINKVERTISE_URL);
+        }).catch(function (error) {
+          console.error("[skyblue] Could not store the pending download.", error);
+          saveBlobToDevice(blob, fileName);
+          incrementCounter(DOWNLOAD_COUNTER_PATH, el.downloadCount);
+          say("Saved " + fileName + ". The ad page was skipped because browser storage is unavailable.", false);
+        });
       }).catch(function (error) {
         say("Safety check failed, so nothing was saved. Your original file is untouched.", true);
         console.error("[skyblue]", error);
@@ -865,5 +1018,6 @@
     }
   });
 
+  initializeDownloadReturn();
   initializeCounters();
 })();
