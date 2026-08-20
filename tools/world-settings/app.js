@@ -187,8 +187,6 @@
     var anchor = document.createElement("a");
     anchor.href = objectUrl;
     anchor.download = fileName;
-    anchor.target = "_blank";
-    anchor.rel = "noopener";
     document.body.appendChild(anchor);
     anchor.click();
     setTimeout(function () { anchor.remove(); }, 1000);
