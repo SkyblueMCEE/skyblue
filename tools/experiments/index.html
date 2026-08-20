@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enable Experimental Features</title>
+<meta name="description" content="Turn experimental features on or off in any Minecraft Education or Bedrock world. Runs entirely in your browser — your world is never uploaded.">
+<link rel="icon" href="../../assets/logo.png">
+<link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<div class="sky-page">
+
+  <!-- decorative background clouds -->
+  <div class="sky-deco" aria-hidden="true">
+    <svg class="d1 sky-drift"   viewBox="0 0 400 200"><use href="#cloud"/></svg>
+    <svg class="d2 sky-drift-b" viewBox="0 0 400 200"><use href="#cloud"/></svg>
+    <svg class="d3 sky-drift"   viewBox="0 0 400 200"><use href="#cloud"/></svg>
+    <svg class="d4 sky-drift-b" viewBox="0 0 400 200"><use href="#cloud"/></svg>
+    <svg class="d5 sky-drift"   viewBox="0 0 400 200"><use href="#cloud"/></svg>
+    <svg class="d6 sky-drift-b" viewBox="0 0 400 200"><use href="#cloud"/></svg>
+    <svg class="d7 sky-drift"   viewBox="0 0 400 200"><use href="#cloud"/></svg>
+  </div>
+
+  <!-- shared cloud shapes -->
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <defs>
+      <path id="cloud" d="M56 186 A34 34 0 0 1 58 120 A52 52 0 0 1 154 98 A42 42 0 0 1 232 108 A38 38 0 0 1 296 142 A30 30 0 0 1 316 186 Z"/>
+      <path id="cloud-zone" d="M70,240 C30,240 8,214 8,186 C8,158 28,136 55,131 C58,86 96,50 143,50 C172,50 197,64 212,86 C231,42 275,12 326,12 C391,12 445,60 452,122 C458,119 465,118 472,118 C517,118 553,155 553,200 C553,222 536,240 514,240 Z"/>
+    </defs>
+  </svg>
+
+  <header class="sky-header">
+    <div class="sky-wrap">
+      <a class="sky-logo" href="../../"><img src="../../assets/logo.png" alt="SKYBLUE" width="78" height="78"></a>
+      <div class="sky-divider" role="presentation"></div>
+    </div>
+  </header>
+
+  <main class="sky-main">
+
+    <section class="sky-hero">
+      <div class="sky-wrap">
+        <h1 class="sky-h1">Turn Minecraft experiments on or off</h1>
+        <p class="sky-lede">Open a saved world, switch the experimental features you want, and save a new copy. No Minecraft settings menu, no re-creating the world.</p>
+        <p class="sky-privacy"><span class="sky-warn-icon" aria-hidden="true"></span> Your world never leaves your device.</p>
+      </div>
+    </section>
+
+    <section class="sky-sec" aria-labelledby="zone-h">
+      <div class="sky-wrap">
+        <h2 class="vh" id="zone-h">Open a world file</h2>
+        <button class="sky-zone" id="zone" type="button">
+          <span class="sky-zone-frame">
+            <svg class="sky-zone-svg" viewBox="0 0 560 250" aria-hidden="true">
+              <use class="sky-zone-path" href="#cloud-zone"/>
+            </svg>
+            <span class="sky-zone-inner">
+              <span class="sky-zone-title" id="zone-title">Drop your .mcworld here (Click Me!)</span>
+              <span class="sky-zone-sub" id="zone-sub">or tap to browse. Files stay on your device.</span>
+            </span>
+          </span>
+        </button>
+        <input class="vh" id="file" type="file" accept=".mcworld,.mctemplate,.zip">
+        <p class="vh" role="status" aria-live="polite" id="status"></p>
+        <p class="sky-zone-note" id="note" hidden></p>
+      </div>
+    </section>
+
+    <section class="sky-sec" id="panel-sec" hidden aria-labelledby="panel-h">
+      <div class="sky-wrap">
+        <div class="sky-card">
+          <div class="sky-card-head">
+            <span class="sky-kicker">World loaded</span>
+            <h2 class="sky-world" id="panel-h"></h2>
+            <p class="sky-meta" id="panel-meta"></p>
+          </div>
+          <ul class="sky-rows" id="rows"></ul>
+          <div class="sky-panel-foot">
+            <button class="sky-btn sky-btn-quiet" id="alloff" type="button">Turn everything off</button>
+            <span class="sky-count" id="count"></span>
+          </div>
+        </div>
+        <div class="sky-dl">
+          <button class="sky-btn sky-btn-lg" id="download" type="button">Save a new copy</button>
+          <p class="sky-aftercare">Your original file is untouched. Import the new copy in Minecraft the way you normally import a world.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sky-sec" aria-labelledby="warn-h">
+      <div class="sky-wrap">
+        <div class="sky-card">
+          <span class="sky-kicker">Read this first</span>
+          <h2 class="sky-h2" id="warn-h">Before you change a world</h2>
+          <ul class="sky-warn">
+            <li><b>Back up the world first.</b> This tool writes a new file and never touches your original, but a backup costs nothing.</li>
+            <li><b>Experiments permanently mark a world.</b> Minecraft records that experiments were used. Turning them all off here removes those markers, but the game may re-add them.</li>
+            <li><b>Not every feature exists in every build.</b> Enabling a flag for something your version does not contain can crash the game or damage the save.</li>
+            <li><b>Minecraft Education hides this toggle on purpose.</b> On a school-managed account this may cut against your IT policy — check before relying on it for classwork.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="sky-footer">
+    <div class="sky-wrap sky-foot-in">
+      <p>SKYBLUE runs entirely in this tab. No uploads, no accounts, no tracking, no cookies.</p>
+      <p>Built on the Minecraft Bedrock community's NBT and level.dat documentation. Not affiliated with Mojang or Microsoft.</p>
+      <p><a href="https://github.com/SkyblueMCEE/skyblue">View source on GitHub</a></p>
+    </div>
+  </footer>
+</div>
+
+<script src="core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

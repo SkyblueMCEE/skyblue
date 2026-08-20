@@ -1,0 +1,38 @@
+name: Update popular videos
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-videos
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Rebuild video list from the YouTube Data API
+        env:
+          YT_API_KEY: ${{ secrets.YT_API_KEY }}
+        run: node scripts/build-videos.mjs
+      - name: Commit if anything changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain videos/index.html assets/thumbs)" ]; then
+            git add videos/index.html assets/thumbs
+            git commit -m "Update popular videos"
+            git push
+            echo "changes pushed"
+          else
+            echo "nothing to update"
+          fi
