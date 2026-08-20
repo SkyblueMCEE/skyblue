@@ -274,12 +274,12 @@ a:hover{color:var(--sky-brand-press)}
 .sky-pack-list li{font-family:var(--font-mono);font-size:.6875rem;color:rgba(6,36,48,.68);overflow-wrap:anywhere}
 
 /* download */
-.sky-dl{display:flex;flex-direction:column;gap:.875rem}
+.sky-dl{display:flex;flex-direction:column;gap:.875rem;margin-top:1.25rem}
 .sky-aftercare{font-size:.9375rem;max-width:var(--measure);margin-inline:auto}
 .sky-ready-card{max-width:42rem;margin-inline:auto}
 .sky-ready-copy{margin-top:.625rem;max-width:var(--measure);color:rgba(6,36,48,.76)}
 .sky-ready-actions{display:flex;flex-direction:column;align-items:stretch;gap:.75rem;margin-top:1.5rem}
-.sky-ready-actions .sky-btn-ghost{justify-content:center}
+.sky-ready-actions .sky-btn{max-width:100%;justify-content:center;text-align:center;text-decoration:none;overflow-wrap:anywhere}
 .sky-ready-card .sky-section-note{margin-top:1rem}
 
 /* warnings */

@@ -1,0 +1,18 @@
+{
+	"name": "skyblue-world-settings-counters",
+	"main": "src/worker.mjs",
+	"compatibility_date": "2026-08-20",
+	"observability": {
+		"enabled": true
+	},
+	"vars": {
+		"ALLOWED_ORIGINS": "https://skybluemcee.github.io,http://localhost:4174,http://127.0.0.1:4174"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "skyblue-counters",
+			"database_id": "39283792-d2e9-4ebf-a6ac-fdf23c0f8773"
+		}
+	]
+}

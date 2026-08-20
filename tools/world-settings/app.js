@@ -41,27 +41,15 @@
   var DOWNLOAD_ROUTE = "download-file.mcworld";
   var downloadWorkerReady = registerDownloadWorker();
 
-  var COUNTER_API = "https://page-views-api.ratneshc.com/api/v1";
-  var COUNTER_SITE = window.location.hostname.toLowerCase();
-
-  function normalizedCounterPath(path) {
-    var clean = (path || "/").replace(/\/{2,}/g, "/").replace(/\/$/, "");
-    return clean || "/";
-  }
-
-  var VIEW_COUNTER_PATH = normalizedCounterPath(window.location.pathname);
-  var DOWNLOAD_COUNTER_PATH = normalizedCounterPath(VIEW_COUNTER_PATH + "/downloads");
+  var COUNTER_API = "https://skyblue-world-settings-counters.world-settings-counters.workers.dev";
 
   function countersEnabled() {
     return window.location.protocol === "https:" &&
-      COUNTER_SITE &&
-      ["localhost", "127.0.0.1", "::1"].indexOf(COUNTER_SITE) === -1;
+      ["localhost", "127.0.0.1", "::1"].indexOf(window.location.hostname.toLowerCase()) === -1;
   }
 
-  function counterUrl(action, path) {
-    return COUNTER_API + "/" + action +
-      "?site=" + encodeURIComponent(COUNTER_SITE) +
-      "&path=" + encodeURIComponent(path);
+  function counterUrl(action) {
+    return COUNTER_API + "/api/" + action;
   }
 
   function formatCounter(value) {
@@ -72,12 +60,18 @@
     if (node && Number.isFinite(value) && value >= 0) node.textContent = formatCounter(value);
   }
 
-  function readCounter(path, node) {
+  function showCounters(data) {
+    showCounter(el.viewCount, Number(data.views));
+    showCounter(el.downloadCount, Number(data.downloads));
+  }
+
+  function readCounters() {
     if (!countersEnabled()) {
-      if (node) node.title = "Counters are available on the published HTTPS site.";
+      if (el.viewCount) el.viewCount.title = "Counters are available on the published HTTPS site.";
+      if (el.downloadCount) el.downloadCount.title = "Counters are available on the published HTTPS site.";
       return Promise.resolve();
     }
-    return fetch(counterUrl("views", path), {
+    return fetch(counterUrl("counts"), {
       cache: "no-store",
       credentials: "omit",
       referrerPolicy: "no-referrer"
@@ -85,29 +79,33 @@
       if (!response.ok) throw new Error("counter-read");
       return response.json();
     }).then(function (data) {
-      showCounter(node, Number(data.views));
+      showCounters(data);
     }).catch(function () {
-      if (node) node.title = "Counter temporarily unavailable.";
+      if (el.viewCount) el.viewCount.title = "Counter temporarily unavailable.";
+      if (el.downloadCount) el.downloadCount.title = "Counter temporarily unavailable.";
     });
   }
 
-  function incrementCounter(path, node) {
+  function incrementCounter(kind) {
     if (!countersEnabled()) return Promise.resolve();
-    return fetch(counterUrl("track", path), {
+    return fetch(counterUrl(kind), {
+      method: "POST",
       cache: "no-store",
       credentials: "omit",
       keepalive: true,
       referrerPolicy: "no-referrer"
+    }).then(function (response) {
+      if (!response.ok) throw new Error("counter-increment");
+      return response.json();
+    }).then(function (data) {
+      showCounters(data);
     }).catch(function () {
-      return null;
-    }).then(function () {
-      return readCounter(path, node);
+      return readCounters();
     });
   }
 
   function initializeCounters() {
-    incrementCounter(VIEW_COUNTER_PATH, el.viewCount);
-    readCounter(DOWNLOAD_COUNTER_PATH, el.downloadCount);
+    incrementCounter("view");
   }
 
   function registerDownloadWorker() {
@@ -295,7 +293,7 @@
         var usedReliableDownload = saveBlobToDevice(pending.blob, pending.fileName, true);
         if (!downloadCounted) {
           downloadCounted = true;
-          incrementCounter(DOWNLOAD_COUNTER_PATH, el.downloadCount);
+          incrementCounter("download");
         }
         window.history.replaceState(null, "", window.location.pathname);
         el.downloadReady.textContent = "Download again";
@@ -1063,7 +1061,7 @@
         }).catch(function (error) {
           console.error("[skyblue] Could not store the pending download.", error);
           saveBlobToDevice(blob, fileName);
-          incrementCounter(DOWNLOAD_COUNTER_PATH, el.downloadCount);
+          incrementCounter("download");
           say("Saved " + fileName + ". The ad page was skipped because browser storage is unavailable.", false);
         });
       }).catch(function (error) {
