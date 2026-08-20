@@ -187,10 +187,18 @@
     var anchor = document.createElement("a");
     anchor.href = objectUrl;
     anchor.download = fileName;
+    anchor.target = "_blank";
+    anchor.rel = "noopener";
     document.body.appendChild(anchor);
     anchor.click();
-    anchor.remove();
-    setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 4000);
+    setTimeout(function () { anchor.remove(); }, 1000);
+
+    // Firefox-based browsers may not consume a blob URL until after their
+    // download prompt closes. Revoking it after a few seconds can turn that
+    // pending download into a "File not found" page. Keep it alive for the
+    // same window as the pending download; the browser also releases it when
+    // this document is unloaded.
+    setTimeout(function () { URL.revokeObjectURL(objectUrl); }, PENDING_DOWNLOAD_MAX_AGE);
   }
 
   function isDownloadReturn() {
