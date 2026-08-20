@@ -164,6 +164,7 @@ a:hover{color:var(--sky-brand-press)}
   min-height:2.75rem;padding:.75rem 1.375rem;
   background:var(--sky-white);color:var(--sky-ink);
   font-family:var(--font-body);font-weight:600;font-size:1rem;letter-spacing:-.01em;
+  text-decoration:none;
   border:0;border-radius:2px;cursor:pointer;
   box-shadow:var(--glow-rest);
   transition:color var(--dur-base) var(--ease),box-shadow var(--dur-base) var(--ease),transform var(--dur-base) var(--ease);
