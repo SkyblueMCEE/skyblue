@@ -165,7 +165,7 @@ a:hover{color:var(--sky-brand-press)}
 .sky-card{background:var(--sky-white);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--info-box-shadow);}
 
 
-}
+
 .sky-card-head{display:flex;flex-direction:column;gap:.25rem;padding-bottom:1rem;border-bottom:1px solid var(--sky-fill)}
 .sky-kicker{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--sky-brand-text)}
 .sky-world{font-family:var(--font-body);font-weight:600;font-size:1.375rem;line-height:1.3;word-break:break-word}
