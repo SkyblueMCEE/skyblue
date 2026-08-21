@@ -6,7 +6,8 @@
 		"enabled": true
 	},
 	"vars": {
-		"ALLOWED_ORIGINS": "https://skybluemcee.github.io,http://localhost:4174,http://127.0.0.1:4174"
+		"ALLOWED_ORIGINS": "https://skybluemcee.github.io,http://localhost:4174,http://127.0.0.1:4174",
+		"ALLOWED_HTTPS_HOST_SUFFIXES": "skyblue-preview.pages.dev"
 	},
 	"d1_databases": [
 		{

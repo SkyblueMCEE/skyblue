@@ -47,9 +47,13 @@ function rootPath(file) {
   return depth === 0 ? './' : '../'.repeat(depth);
 }
 
-/* re-indent a partial so it lines up with the marker it replaces */
-const indent = (text, pad) =>
-  text.trimEnd().split('\n').map((l) => (l ? pad + l : l)).join('\n');
+/* Re-indent a partial so it lines up with the marker it replaces. Normalize
+   the partial first, then use the page's own line ending. This keeps --check
+   deterministic on Windows (CRLF) and GitHub Actions (LF). */
+const indent = (text, pad, eol) =>
+  text.replace(/\r\n?/g, '\n').trimEnd().split('\n')
+    .map((line) => (line ? pad + line : line))
+    .join(eol);
 
 function replaceBlock(src, name, body) {
   const START = `<!-- ${name}:START -->`;
@@ -59,10 +63,11 @@ function replaceBlock(src, name, body) {
   if (a === -1 || b === -1) return null;          // page opts out
   if (b < a) throw new Error(`${END} comes before ${START}`);
 
+  const eol = src.includes('\r\n') ? '\r\n' : '\n';
   const lineStart = src.lastIndexOf('\n', a) + 1;
   const pad = src.slice(lineStart, a);            // whitespace before the marker
   return src.slice(0, a + START.length)
-       + '\n' + indent(body, pad) + '\n' + pad
+       + eol + indent(body, pad, eol) + eol + pad
        + src.slice(b);
 }
 

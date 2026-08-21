@@ -7,6 +7,33 @@ function allowedOrigins(env) {
     .filter(Boolean));
 }
 
+function allowedHttpsHostSuffixes(env) {
+  return String(env.ALLOWED_HTTPS_HOST_SUFFIXES || "")
+    .split(",")
+    .map((hostname) => hostname.trim().toLowerCase().replace(/^\.+/, ""))
+    .filter(Boolean);
+}
+
+function isAllowedOrigin(env, origin) {
+  if (allowedOrigins(env).has(origin)) return true;
+
+  let url;
+  try {
+    url = new URL(origin);
+  } catch {
+    return false;
+  }
+
+  if (url.protocol !== "https:" || url.username || url.password || url.port) {
+    return false;
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  return allowedHttpsHostSuffixes(env).some((suffix) =>
+    hostname === suffix || hostname.endsWith("." + suffix)
+  );
+}
+
 function corsHeaders(origin) {
   return {
     "Access-Control-Allow-Origin": origin,
@@ -51,7 +78,7 @@ async function increment(env, column) {
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
-    if (!allowedOrigins(env).has(origin)) {
+    if (!isAllowedOrigin(env, origin)) {
       return new Response("Origin not allowed", { status: 403 });
     }
 
