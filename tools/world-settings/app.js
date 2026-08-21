@@ -29,7 +29,7 @@
     downloadReadyStatus: $("download-ready-status")
   };
 
-  var LINKVERTISE_LIVE_URL = "https://link-center.net/7806078/HB8fxxmmD4Y2";
+  var LINKVERTISE_LIVE_URL = "https://link-target.net/7806078/ZGgLU6IuBquy";
   var LINKVERTISE_URL = ["localhost", "127.0.0.1", "::1"].indexOf(window.location.hostname) !== -1
     ? window.location.pathname + "?download=ready"
     : LINKVERTISE_LIVE_URL;
