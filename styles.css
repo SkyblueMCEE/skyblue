@@ -441,6 +441,29 @@ a:hover{color:var(--sky-brand-press)}
 
 .sky-choice-sub{font-size:.8125rem;line-height:1.4;color:var(--sky-ink)}
 
+/* Landing pages use a tighter rhythm than the long-form tool and video pages. */
+.sky-main--compact .sky-hero{padding-block-end:1.5rem}
+.sky-main--compact .sky-sec{padding-block:clamp(2rem,3vw,3rem)}
+.sky-main--compact .sky-hero + .sky-sec,
+.sky-main--compact .sky-sec + .sky-sec{padding-block-start:0}
+.sky-main--compact .sky-choices{margin-top:clamp(1.5rem,3vw,2.5rem)}
+.sky-choices--single{width:100%;max-width:44rem;margin-inline:auto}
+
+/* Give the tools directory a little more air without returning to the old gaps. */
+.sky-main--tools .sky-hero{padding-block-end:2.5rem}
+.sky-main--tools .sky-sec{padding-block-end:clamp(3rem,5vw,4.5rem)}
+.sky-main--tools .sky-card{
+  max-width:54rem;
+  margin-inline:auto;
+  padding:clamp(1.5rem,4vw,2.5rem)
+}
+.sky-main--tools .sky-card .sky-warn{margin-top:1.5rem;gap:1.5rem}
+.sky-main--tools .sky-tool-list{padding-block-end:5rem}
+
+@media (min-width:48rem){
+  .sky-main--tools .sky-tool-list{padding-block-end:clamp(10rem,20vw,20rem)}
+}
+
 /* video cards */
 .sky-vids{display:grid;grid-template-columns:1fr;gap:1.25rem;margin-top:1.75rem;
   list-style:none;padding:0}
