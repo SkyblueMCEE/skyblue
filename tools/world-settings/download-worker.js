@@ -79,7 +79,9 @@ function attachmentResponse(pending) {
     return textResponse("This temporary download expired.", 410);
   }
 
-  var fileName = String(pending.fileName).replace(/[\r\n]/g, "_");
+  var fileName = String(pending.fileName)
+    .replace(/-skyblue\.mcworld$/i, "-modified.mcworld")
+    .replace(/[\r\n]/g, "_");
   var fallbackName = fileName.replace(/[^\x20-\x7E]/g, "_").replace(/["\\]/g, "_");
   return new Response(pending.blob, {
     status: 200,

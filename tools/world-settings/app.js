@@ -224,30 +224,34 @@
     return frame.name;
   }
 
-  function clickDownloadLink(href, fileName) {
-    var frameName = makeDownloadFrame();
+  function usesGeckoDownloadWorkaround() {
+    return /(?:Firefox|FxiOS)\//i.test(String(navigator.userAgent || ""));
+  }
+
+  function clickDownloadLink(href, fileName, useFrame) {
     var anchor = document.createElement("a");
     anchor.href = href;
     anchor.download = fileName;
-    anchor.target = frameName;
+    if (useFrame) anchor.target = makeDownloadFrame();
     document.body.appendChild(anchor);
     anchor.click();
     setTimeout(function () { anchor.remove(); }, 1000);
   }
 
   function saveBlobToDevice(blob, fileName, preferStoredDownload) {
-    if (preferStoredDownload && navigator.serviceWorker && navigator.serviceWorker.controller) {
-      clickDownloadLink(DOWNLOAD_ROUTE + "?v=" + Date.now(), fileName);
+    var useGeckoWorkaround = usesGeckoDownloadWorkaround();
+    if (preferStoredDownload && useGeckoWorkaround && navigator.serviceWorker && navigator.serviceWorker.controller) {
+      clickDownloadLink(DOWNLOAD_ROUTE + "?v=" + Date.now(), fileName, true);
       return true;
     }
 
     var objectUrl = URL.createObjectURL(blob);
-    clickDownloadLink(objectUrl, fileName);
+    clickDownloadLink(objectUrl, fileName, useGeckoWorkaround);
 
-    // The hidden frame keeps the editor page (and therefore this URL) alive if
-    // a browser treats the fallback as navigation instead of as a download.
+    // Keep the object URL alive because browsers begin downloads asynchronously.
+    // Gecko also gets a hidden-frame target so it cannot navigate away from the editor.
     setTimeout(function () { URL.revokeObjectURL(objectUrl); }, PENDING_DOWNLOAD_MAX_AGE);
-    return false;
+    return !useGeckoWorkaround;
   }
 
   function isDownloadReturn() {
@@ -282,6 +286,7 @@
         return;
       }
 
+      pending.fileName = String(pending.fileName).replace(/-skyblue\.mcworld$/i, "-modified.mcworld");
       el.downloadReady.disabled = false;
       el.downloadReady.textContent = "Download " + pending.fileName;
       el.downloadReadyStatus.textContent = "Ready on this device. You can retry the download for up to two hours.";
@@ -1054,7 +1059,7 @@
         if (!packsOkay) throw new Error("safety-check");
 
         var base = (state.worldName || "world").replace(/[^\w\- ]+/g, "").trim() || "world";
-        var fileName = base + "-skyblue.mcworld";
+        var fileName = base + "-modified.mcworld";
         return storePendingDownload(blob, fileName).then(function () {
           say("Your modified world is ready. Opening the download page…", false);
           window.location.assign(LINKVERTISE_URL);
