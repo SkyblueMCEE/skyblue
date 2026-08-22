@@ -39,6 +39,7 @@
   var PENDING_DOWNLOAD_MAX_AGE = 2 * 60 * 60 * 1000;
   var DOWNLOAD_WORKER_URL = "download-worker.js";
   var DOWNLOAD_ROUTE = "download-file.mcworld";
+  var VIEW_SESSION_KEY = "skyblue-world-settings-view-counted";
   var downloadWorkerReady = registerDownloadWorker();
 
   var COUNTER_API = "https://skyblue-world-settings-counters.world-settings-counters.workers.dev";
@@ -105,6 +106,23 @@
   }
 
   function initializeCounters() {
+    if (!countersEnabled()) {
+      readCounters();
+      return;
+    }
+
+    try {
+      if (window.sessionStorage.getItem(VIEW_SESSION_KEY) === "1") {
+        readCounters();
+        return;
+      }
+      window.sessionStorage.setItem(VIEW_SESSION_KEY, "1");
+    } catch (error) {
+      // If session storage is unavailable, show the totals without inflating them.
+      readCounters();
+      return;
+    }
+
     incrementCounter("view");
   }
 
